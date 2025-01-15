@@ -14,3 +14,4 @@
 - Зайти в папку с проектом.
 - Запустить docker-compose файл (docker-compose up -d).
 - Перейти в браузер и набрать адрес c документацией: http://localhost:8181/swagger-ui/index.html
+- Для просмотра содержимого MongoDB bcgjkmpjdfnm: http://localhost:8081/
