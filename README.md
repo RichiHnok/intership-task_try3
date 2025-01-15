@@ -12,4 +12,4 @@
 - Скачать архив репозитория и распаковать его.
 - Зайти в папку с проектом.
 - Запустить docker-compose файл (docker-compose up -d).
-- Перейти в браузер и набрать адрес м документацией: http://localhost:8181/swagger-ui/index.html
+- Перейти в браузер и набрать адрес c документацией: http://localhost:8181/swagger-ui/index.html
