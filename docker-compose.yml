@@ -1,0 +1,122 @@
+services:
+  postgres:
+    container_name: ms_pg_sql_3
+    image: postgres
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_user
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - ./db_init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_03:/var/lib/postgresql/data
+    ports:
+      - 5440:5432
+    networks:
+      - microservices-net03
+    restart: unless-stopped
+
+  mongodb:
+    container_name: ms_mongo_db
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_03:/data
+    networks:
+      - microservices-net03
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=db_user
+      - MONGO_INITDB_ROOT_PASSWORD=db_user
+
+  mongo-express:
+    image: mongo-express
+    container_name: ms_mongo_express
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    networks:
+      - microservices-net03
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=db_user
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=db_user
+      - ME_CONFIG_MONGODB_SERVER=mongodb  
+
+  main-service:
+    image: main_service
+    container_name: main-service
+    build:
+      context: ./services/main-service
+      dockerfile: dockerfile
+    ports:
+      - 8181:8181
+    networks:
+      - microservices-net03
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres/users
+      - SERVER_PORT=8181
+      # - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+
+  storage-service:
+    image: storage-service
+    container_name: storage-service
+    build:
+      context: ./services/storage-service
+      dockerfile: dockerfile
+    ports:
+      - 8182:8182
+    networks:
+      - microservices-net03
+    depends_on:
+      - mongodb
+      - kafka
+    environment:
+      # SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/storage
+      SPRING_DATA_MONGODB_URI: mongodb://db_user:db_user@mongodb:27017/storage?authSource=admin
+      # SPRING_DATA_MONGODB_USERNAME: db_user
+      # SPRING_DATA_MONGODB_PASSWORD: db_user
+      # SPRING_DATA_MONGODB_HOST: host.docker.internal
+      # SPRING_DATA_MONGODB_PORT: 27017
+      # SPRING_DATA_MONGODB_DATABASE: storage 
+      # SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin 
+      SERVER_PORT: 8182
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ZOOKEEPER_SERVER_ID=1
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    ports:
+      - 2181:2181
+    networks:
+      - microservices-net03
+  
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    networks:
+      - microservices-net03
+
+networks:
+  microservices-net03:
+    driver: bridge
+
+volumes:
+  postgres_03:
+  mongo_03:

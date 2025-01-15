@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: storage-service
+  # data:
+  #   mongodb:
+      # uri: mongodb://localhost:27017/storage
+      # username: db_user
+      # password: db_user
+      # # host: localhost
+      # # port: 27017
+      # # database: storage
+      # authentication-database: admin
+  kafka:
+    bootstrap-servers: host.docker.internal:9092
+    consumer:
+      # bootstrap-servers: localhost:9092
+      group-id: storageGroup
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: 8182
